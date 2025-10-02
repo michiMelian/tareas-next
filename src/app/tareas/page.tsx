@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { tasks } from "@/app/tasks/registry";
+import { redirect } from "next/navigation";
 
 export default function TareasIndex() {
+  redirect("/tareas/tabla-uploads");
   const sorted = tasks.slice().sort((a, b) => a.date.localeCompare(b.date));
   return (
     <main className="p-6">
