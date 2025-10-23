@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { create } from "zustand";
 import * as yup from "yup";
+import Link from "next/link"; // ⬅️ botón de navegación
 
 /* ========= Validación con Yup ========= */
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -125,9 +126,27 @@ export default function TablaUploadsPage() {
 
   return (
     <main className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">
-        Tabla editable con columna de subida (PDF)
-      </h1>
+      {/* Header con botón "Estado" */}
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Tabla editable con columna de subida (PDF)
+          </h1>
+          <p className="opacity-80">
+            Sube <strong>PDF (máx. 5 MB)</strong>, verás el{" "}
+            <strong>nombre del archivo</strong> y podrás
+            <strong> reemplazar</strong> o <strong>eliminar</strong>.
+          </p>
+        </div>
+
+        {/* Botón que redirige a la vista de estados */}
+        <Link
+          href="/tareas/tabla-estados"
+          className="rounded-lg border px-3 py-1.5 hover:bg-black/5"
+        >
+          Estado
+        </Link>
+      </header>
 
       <div className="overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
