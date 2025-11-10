@@ -3,9 +3,8 @@
 import { useRef } from "react";
 import { create } from "zustand";
 import * as yup from "yup";
-import Link from "next/link"; // ⬅️ botón de navegación
 
-/* ========= Validación con Yup ========= */
+/* ---------- Validación (Yup) ---------- */
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = ["application/pdf"];
 
@@ -17,7 +16,7 @@ const fileSchema = yup
   })
   .required();
 
-/* ========= Tipos & utils ========= */
+/* ---------- Tipos / utils ---------- */
 type UploadedFile = {
   name: string;
   size: number;
@@ -39,15 +38,7 @@ function formatBytes(b: number) {
   return `${(b / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-/* ========= Estado con Zustand (incluye mocks) ========= */
-type UploadsState = {
-  rows: Row[];
-  replaceFile: (rowId: string, file: UploadedFile) => void;
-  removeFile: (rowId: string) => void;
-  setError: (rowId: string, msg: string | null) => void;
-  renameLabel: (rowId: string, label: string) => void;
-};
-
+/* ---------- Mocks + Zustand ---------- */
 const mockRows: Row[] = [
   {
     id: "1",
@@ -72,6 +63,15 @@ const mockRows: Row[] = [
   },
 ];
 
+type UploadsState = {
+  rows: Row[];
+  replaceFile: (rowId: string, file: UploadedFile) => void;
+  removeFile: (rowId: string) => void;
+  setError: (rowId: string, msg: string | null) => void;
+  renameLabel: (rowId: string, label: string) => void;
+  reset: () => void;
+};
+
 const useUploadsStore = create<UploadsState>((set) => ({
   rows: mockRows,
   replaceFile: (rowId, file) =>
@@ -94,11 +94,12 @@ const useUploadsStore = create<UploadsState>((set) => ({
     set((s) => ({
       rows: s.rows.map((r) => (r.id === rowId ? { ...r, label } : r)),
     })),
+  reset: () => set({ rows: mockRows }),
 }));
 
-/* ========= Página: tabla editable con columna de uploads ========= */
-export default function TablaUploadsPage() {
-  const { rows, replaceFile, removeFile, setError, renameLabel } =
+/* ---------- Página ---------- */
+export default function TablaUploadsV2Page() {
+  const { rows, replaceFile, removeFile, setError, renameLabel, reset } =
     useUploadsStore();
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -125,27 +126,23 @@ export default function TablaUploadsPage() {
   }
 
   return (
-    <main className="p-6 space-y-4">
-      {/* Header con botón "Estado" */}
+    <main className="p-6 space-y-5">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">
-            Tabla editable con columna de subida (PDF)
+            Tabla editable con subida de PDF
           </h1>
-          <p className="opacity-80">
-            Sube <strong>PDF (máx. 5 MB)</strong>, verás el{" "}
-            <strong>nombre del archivo</strong> y podrás
-            <strong> reemplazar</strong> o <strong>eliminar</strong>.
+          <p className="opacity-80 text-sm">
+            Sube <strong>PDF (máx. 5 MB)</strong>, verás el nombre, y podrás{" "}
+            <strong>reemplazar</strong> o <strong>eliminar</strong>.
           </p>
         </div>
-
-        {/* Botón que redirige a la vista de estados */}
-        <Link
-          href="/tareas/tabla-estados"
+        <button
+          onClick={reset}
           className="rounded-lg border px-3 py-1.5 hover:bg-black/5"
         >
-          Estado
-        </Link>
+          Restaurar mock
+        </button>
       </header>
 
       <div className="overflow-x-auto rounded-xl border">
@@ -160,16 +157,16 @@ export default function TablaUploadsPage() {
           </thead>
           <tbody>
             {rows.map((r, idx) => (
-              <tr key={r.id} className="border-t">
-                <td className="p-3 align-top">{idx + 1}</td>
-                <td className="p-3 align-top">
+              <tr key={r.id} className="border-t align-top">
+                <td className="p-3">{idx + 1}</td>
+                <td className="p-3">
                   <input
                     value={r.label}
                     onChange={(e) => renameLabel(r.id, e.target.value)}
                     className="w-full rounded border px-2 py-1"
                   />
                 </td>
-                <td className="p-3 align-top">
+                <td className="p-3">
                   {r.file ? (
                     <div className="space-y-1">
                       <div className="font-medium">{r.file.name}</div>
@@ -182,10 +179,10 @@ export default function TablaUploadsPage() {
                     <span className="text-xs opacity-70">Sin archivo</span>
                   )}
                   {r.error && (
-                    <div className="text-red-600 text-xs mt-1">{r.error}</div>
+                    <div className="text-xs text-red-600 mt-1">{r.error}</div>
                   )}
                 </td>
-                <td className="p-3 align-top">
+                <td className="p-3">
                   <div className="flex gap-2">
                     <button
                       onClick={() => openPicker(r.id)}
@@ -202,10 +199,11 @@ export default function TablaUploadsPage() {
                       </button>
                     )}
                   </div>
-
                   {/* input oculto por fila */}
                   <input
-                    ref={(el) => (inputRefs.current[r.id] = el)}
+                    ref={(el) => {
+                      inputRefs.current[r.id] = el;
+                    }}
                     type="file"
                     accept="application/pdf"
                     className="hidden"
@@ -214,6 +212,15 @@ export default function TablaUploadsPage() {
                 </td>
               </tr>
             ))}
+            {rows.length === 0 && (
+              <tr>
+                <td className="p-3" colSpan={4}>
+                  <span className="text-sm opacity-70">
+                    Sin filas disponibles.
+                  </span>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -221,7 +228,7 @@ export default function TablaUploadsPage() {
       <div className="rounded-xl border p-3 text-xs opacity-80">
         <p>
           <strong>Validación:</strong> Yup (solo PDF, máx. 5 MB).{" "}
-          <strong>Estado:</strong> Zustand con datos simulados.
+          <strong>Estado:</strong> Zustand con mocks.
         </p>
       </div>
     </main>
